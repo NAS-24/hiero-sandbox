@@ -1,0 +1,179 @@
+
+# .github/hiero-bot.yml  ─────────────────────────────────────────
+# Hiero Maintainer Bot v2 — Repository Configuration
+# Add this file to any repo where the bot is installed.
+# Every workflow section is optional; omit what you don't need.
+#
+
+repo: "NAS-24/hiero-sandbox"
+
+difficulty_labels:
+  intermediate: "intermediate"
+
+teams:
+  mentors: "mentors"
+
+workflows:
+
+  # Onboarding
+  onboarding:
+    enabled: true
+
+    # true  → skip bots GitHub reports as `type: Bot` *and* logins that match
+    #         known automation accounts (dependabot[bot], renovate, ...)
+    # false → skip only accounts GitHub itself reports as bots
+    check_human_contributors: true
+
+    # Post the welcome comment only for genuine first-time contributors.
+    # Set false to greet every issue opener.
+    welcome_first_time_only: true
+
+    # Gate /assign on the contributor appearing in the CLA signature file.
+    # Fails closed: a missing or unreadable file blocks assignment.
+    require_signed_cla: false
+    cla_signatures_file: ".github/cla-signatures.json"
+    # cla_document_url: "https://example.org/cla"
+
+    minimum_account_age_days: 0        # 0 = no minimum
+    minimum_public_contributions: 0    # 0 = no minimum
+
+    # Maximum number of open issues a contributor can have assigned
+    # simultaneously in this repository.
+    # Set to null to disable the limit.
+    max_concurrent_assignments: 3
+    auto_assign_mentor: false
+    mentor_assignment_strategy: round-robin  # round-robin | least-busy | expertise-match
+    welcome_message: |
+      We're thrilled to have you! Please read **CONTRIBUTING.md** before getting started.
+    onboarding_checklist:
+      - Read CONTRIBUTING.md
+      - Sign your commits (DCO)
+      - Join the Hiero Discord
+
+  # Pull Request
+  pull_request:
+    enabled: true
+    reviewer_recommendation: true  # Suggest reviewers based on file history
+
+    ai_review:
+      enabled: false
+      # auto       — first configured backend in registry order
+      #              (openai → anthropic → ollama)
+      # anthropic  — requires ANTHROPIC_API_KEY
+      # openai     — requires OPENAI_API_KEY and/or OPENAI_BASE_URL
+      #              (OpenAI, vLLM, LM Studio, gateways, etc.)
+      # ollama     — requires OLLAMA_BASE_URL; the endpoint may be local
+      #              or hosted on trusted remote infrastructure
+      provider: auto
+      model: "claude-sonnet-4-20250514"
+      max_comments: 5                 # 1–20
+      focus_areas: [security, logic]  # security | performance | style | logic | tests
+      max_retries: 2                  # transient failures only; 0–5
+      timeout_seconds: 60            # maximum time allowed per request
+
+    quality_gates:
+      require_tests: true
+      require_dco: true
+      require_gpg_signature: false
+      # max_files_changed: 50
+      require_changelog_entry: false
+      require_linked_issue: false
+      # allowed_branch_pattern: "^(feat|fix|chore|docs)/"   # max 200 characters
+
+    auto_label: true
+
+  # Reviewer Assignment
+  #
+  # Automatically requests reviewers on newly opened, non-draft PRs.
+  # Unlike pull_request.reviewer_recommendation, this makes a real
+  # GitHub review request.
+  reviewer_assignment:
+    enabled: false
+
+    # Repository-local YAML file containing reviewer availability.
+    availability_file: ".github/reviewers.yml"
+
+    # Maximum number of reviewers to request.
+    reviewers_count: 1
+
+    # Reviewer selection strategy:
+    # round-robin → select reviewers based on PR number
+    # random      → randomly select eligible reviewers
+    strategy: round-robin
+
+    # Do not request a review from the PR author.
+    exclude_pr_author: true
+
+    # If no reviewers are currently marked available, fall back
+    # to all reviewers listed in the availability file.
+    fallback_to_all_if_none_available: true
+
+    # Whether to post a comment mentioning the selected reviewers.
+    # off     → only create the GitHub review request
+    # mention → create the review request and mention reviewers in a comment
+    notify_comment: off
+
+    # Create .github/reviewers.yml with:
+    #
+    # reviewers:
+    #   - login: reviewer1
+    #     available: true
+    #   - login: reviewer2
+    #     available: false
+    #
+    # See .github/reviewers.yml in this repository for a working example.
+
+  # PR Health Scoring
+  pr_health:
+    enabled: true
+
+    # Relative weights: signals you leave out count for nothing, and the rest
+    # are scaled so that they add up to 1 (a perfect PR always scores 100).
+    score_weights:
+      has_tests: 0.25
+      has_linked_issue: 0.15
+      has_description: 0.15
+      dco_signed: 0.20
+      review_count: 0.15
+      small_diff: 0.10
+    comment_threshold: 60    # Post comment only if score < this
+    label_healthy_above: 75  # Apply "healthy" label if score >= this
+
+  # Developer Progression
+  progression:
+    enabled: true
+    recommend_issues_after_merge: true
+    recommendation_count: 3
+    celebrate_milestones: true  # Celebrate 1st, 5th, 10th, 25th, 50th PRs
+
+    requirements_for_junior_committer:
+      min_merged_prs: 3
+      min_reviews_given: 2
+      min_months_active: 1
+
+    requirements_for_committer:
+      min_merged_prs: 15
+      min_reviews_given: 10
+      min_months_active: 6
+
+    requirements_for_maintainer:
+      min_merged_prs: 50
+      min_reviews_given: 30
+      min_months_active: 12
+
+  # Issue Management
+  issue_management:
+    enabled: false              # off by default: this workflow closes issues and unassigns people
+    stale_issue_days: 60       # days without activity before an issue is marked stale
+    close_stale_after_days: 7  # grace period: days after an issue is marked stale (with no further activity) before it is closed
+    stale_label: "stale"
+    exempt_labels:
+      - pinned
+      - security
+      - in-progress
+    auto_unassign_inactive_days: 14
+    label_escalation_rules:
+      - label: "security"
+        notify_team: "security-team"
+      - label: "needs-maintainer"
+        notify_team: "maintainers"

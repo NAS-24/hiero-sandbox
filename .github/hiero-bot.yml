@@ -26,7 +26,7 @@ workflows:
 
     # Post the welcome comment only for genuine first-time contributors.
     # Set false to greet every issue opener.
-    welcome_first_time_only: true
+    welcome_first_time_only: false
 
     # Gate /assign on the contributor appearing in the CLA signature file.
     # Fails closed: a missing or unreadable file blocks assignment.
